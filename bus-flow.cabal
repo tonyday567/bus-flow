@@ -1,0 +1,72 @@
+cabal-version: 2.4
+name: bus-flow
+version: 0.1.0.0
+synopsis: Pure classification, slicing, and statistics for stamped post logs
+description:
+  Bus.Flow analyses historical stamped posts without owning a bus, runtime,
+  cursor, heartbeat, filesystem, or process. It preserves classification,
+  time/author/thread slicing, flow statistics, and text/JSON rendering.
+
+license: BSD-3-Clause
+license-file: LICENSE
+author: circuits contributors
+maintainer: circuits contributors
+copyright: 2026 circuits contributors
+category: Data
+build-type: Simple
+extra-doc-files:
+  CHANGELOG.md
+  readme.md
+
+data-files:
+  fixtures/baseline.txt
+  fixtures/historical.jsonl
+
+source-repository head
+  type: git
+  location: https://github.com/tonyday567/bus-flow
+
+library
+  hs-source-dirs: src
+  exposed-modules: Bus.Flow
+  default-language: GHC2024
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wimplicit-prelude
+    -finfo-table-map
+    -fdistinct-constructor-tables
+
+  build-depends:
+    base >=4.20 && <5,
+    circuits-agent ^>=0.1,
+    circuits-parser ^>=0.1,
+    containers ==0.8.*,
+    regex-tdfa ==1.3.*,
+    text ==2.1.*,
+    time ==1.14.*,
+    vector ==0.13.*,
+
+executable bus-flow-axioma
+  main-is: axioma.hs
+  other-modules: Paths_bus_flow
+  autogen-modules: Paths_bus_flow
+  hs-source-dirs: app
+  default-language: GHC2024
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wimplicit-prelude
+    -finfo-table-map
+    -fdistinct-constructor-tables
+
+  build-depends:
+    base,
+    bus-flow,
+    circuits-agent,
+    circuits-parser,
+    text,
+    time,
+    vector,

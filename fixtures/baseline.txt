@@ -1,0 +1,313 @@
+MODE whole
+SLICE whole|0,1,2,3,4,5,6,7,8,101,113,282,284,285
+TEXT
+bus-stats
+  noise regex:    standing by|session complete|^ack$|ping|still here|waiting on
+  signal regex:   [^[:space:]]+\.(md|hs|cabal|jsonl)|🟢|⟝|🚩|decided|fixed|bug|found
+  deliverable:    🟢
+
+slice: whole
+  posts:               14
+  agents:              6
+  duration (min):      2732.900
+  posts/min:           0.005
+  damping rules:       1
+  Re_bus:              0.031
+  signal:              6
+  noise:               4
+  unclassified:        4
+  SNR:                 1.500
+  SNR':                0.750
+  deliverables:        2
+  done claims:         2
+  posts/deliverable:   7.000
+  time to quiescence (min): 2732.900
+
+
+JSON
+{"rules":{"noise":"standing by|session complete|^ack$|ping|still here|waiting on","signal":"[^[:space:]]+\\.(md|hs|cabal|jsonl)|🟢|⟝|🚩|decided|fixed|bug|found","deliverable":"🟢"},"slices":[{"slice":"whole","posts":14,"agents":6,"duration_minutes":2732.90000000000009094947017729282379150390625,"posts_per_minute":0.005122763364923707367359906328374563599936664104461669921875,"damping_rules":1,"re_bus":0.03073658018954224246943596199344028718769550323486328125,"signal":6,"noise":4,"unclassified":4,"snr":1.5,"snr_prime":0.75,"deliverables":2,"done_claims":2,"posts_per_deliverable":7,"time_to_quiescence_minutes":2732.90000000000009094947017729282379150390625}]}
+
+MODE window-60
+SLICE 2026-11-12T04:03:38..2026-11-12T05:03:38|0,1,2,3,4,5,6,7,8
+SLICE 2026-11-12T06:03:38..2026-11-12T07:03:38|101,113
+SLICE 2026-11-14T01:03:38..2026-11-14T02:03:38|282,284,285
+TEXT
+bus-stats
+  noise regex:    standing by|session complete|^ack$|ping|still here|waiting on
+  signal regex:   [^[:space:]]+\.(md|hs|cabal|jsonl)|🟢|⟝|🚩|decided|fixed|bug|found
+  deliverable:    🟢
+
+slice: 2026-11-12T04:03:38..2026-11-12T05:03:38
+  posts:               9
+  agents:              3
+  duration (min):      41.267
+  posts/min:           0.218
+  damping rules:       1
+  Re_bus:              0.654
+  signal:              4
+  noise:               3
+  unclassified:        2
+  SNR:                 1.333
+  SNR':                0.800
+  deliverables:        1
+  done claims:         1
+  posts/deliverable:   9.000
+  time to quiescence (min): 41.267
+
+slice: 2026-11-12T06:03:38..2026-11-12T07:03:38
+  posts:               2
+  agents:              1
+  duration (min):      3.517
+  posts/min:           0.569
+  damping rules:       1
+  Re_bus:              0.569
+  signal:              1
+  noise:               0
+  unclassified:        1
+  SNR:                 -
+  SNR':                1.000
+  deliverables:        1
+  done claims:         0
+  posts/deliverable:   2.000
+  time to quiescence (min): 3.517
+
+slice: 2026-11-14T01:03:38..2026-11-14T02:03:38
+  posts:               3
+  agents:              2
+  duration (min):      1.183
+  posts/min:           2.535
+  damping rules:       1
+  Re_bus:              5.070
+  signal:              1
+  noise:               1
+  unclassified:        1
+  SNR:                 1.000
+  SNR':                0.500
+  deliverables:        0
+  done claims:         1
+  posts/deliverable:   n/a
+  time to quiescence (min): 1.183
+
+
+JSON
+{"rules":{"noise":"standing by|session complete|^ack$|ping|still here|waiting on","signal":"[^[:space:]]+\\.(md|hs|cabal|jsonl)|🟢|⟝|🚩|decided|fixed|bug|found","deliverable":"🟢"},"slices":[{"slice":"2026-11-12T04:03:38..2026-11-12T05:03:38","posts":9,"agents":3,"duration_minutes":41.2666666666666657192763523198664188385009765625,"posts_per_minute":0.218093699515347350104121915137511678040027618408203125,"damping_rules":1,"re_bus":0.654281098546042105823516976670362055301666259765625,"signal":4,"noise":3,"unclassified":2,"snr":1.3333333333333332593184650249895639717578887939453125,"snr_prime":0.8000000000000000444089209850062616169452667236328125,"deliverables":1,"done_claims":1,"posts_per_deliverable":9,"time_to_quiescence_minutes":41.2666666666666657192763523198664188385009765625},{"slice":"2026-11-12T06:03:38..2026-11-12T07:03:38","posts":2,"agents":1,"duration_minutes":3.51666666666666660745477201999165117740631103515625,"posts_per_minute":0.56872037914691941917766371261677704751491546630859375,"damping_rules":1,"re_bus":0.56872037914691941917766371261677704751491546630859375,"signal":1,"noise":0,"unclassified":1,"snr":null,"snr_prime":1,"deliverables":1,"done_claims":0,"posts_per_deliverable":2,"time_to_quiescence_minutes":3.51666666666666660745477201999165117740631103515625},{"slice":"2026-11-14T01:03:38..2026-11-14T02:03:38","posts":3,"agents":2,"duration_minutes":1.1833333333333333481363069950020872056484222412109375,"posts_per_minute":2.5352112676056339779506743070669472217559814453125,"damping_rules":1,"re_bus":5.070422535211267955901348614133894443511962890625,"signal":1,"noise":1,"unclassified":1,"snr":1,"snr_prime":0.5,"deliverables":0,"done_claims":1,"posts_per_deliverable":null,"time_to_quiescence_minutes":1.1833333333333333481363069950020872056484222412109375}]}
+
+MODE agent
+SLICE channel-a|285,282
+SLICE channel-b|284
+SLICE seat-a|2,0
+SLICE seat-b|7,6,3,1
+SLICE seat-c|8,5,4
+SLICE seat-d|113,101
+TEXT
+bus-stats
+  noise regex:    standing by|session complete|^ack$|ping|still here|waiting on
+  signal regex:   [^[:space:]]+\.(md|hs|cabal|jsonl)|🟢|⟝|🚩|decided|fixed|bug|found
+  deliverable:    🟢
+
+slice: channel-a
+  posts:               2
+  agents:              1
+  duration (min):      1.183
+  posts/min:           1.690
+  damping rules:       1
+  Re_bus:              1.690
+  signal:              1
+  noise:               1
+  unclassified:        0
+  SNR:                 1.000
+  SNR':                1.000
+  deliverables:        0
+  done claims:         1
+  posts/deliverable:   n/a
+  time to quiescence (min): 1.183
+
+slice: channel-b
+  posts:               1
+  agents:              1
+  duration (min):      0.000
+  posts/min:           0.000
+  damping rules:       1
+  Re_bus:              0.000
+  signal:              0
+  noise:               0
+  unclassified:        1
+  SNR:                 0.000
+  SNR':                0.000
+  deliverables:        0
+  done claims:         0
+  posts/deliverable:   n/a
+  time to quiescence (min): 0.000
+
+slice: seat-a
+  posts:               2
+  agents:              1
+  duration (min):      6.117
+  posts/min:           0.327
+  damping rules:       1
+  Re_bus:              0.327
+  signal:              1
+  noise:               0
+  unclassified:        1
+  SNR:                 -
+  SNR':                1.000
+  deliverables:        0
+  done claims:         0
+  posts/deliverable:   n/a
+  time to quiescence (min): 6.117
+
+slice: seat-b
+  posts:               4
+  agents:              1
+  duration (min):      34.967
+  posts/min:           0.114
+  damping rules:       1
+  Re_bus:              0.114
+  signal:              1
+  noise:               3
+  unclassified:        0
+  SNR:                 0.333
+  SNR':                0.333
+  deliverables:        1
+  done claims:         0
+  posts/deliverable:   4.000
+  time to quiescence (min): 32.000
+
+slice: seat-c
+  posts:               3
+  agents:              1
+  duration (min):      12.550
+  posts/min:           0.239
+  damping rules:       1
+  Re_bus:              0.239
+  signal:              2
+  noise:               0
+  unclassified:        1
+  SNR:                 -
+  SNR':                2.000
+  deliverables:        0
+  done claims:         1
+  posts/deliverable:   n/a
+  time to quiescence (min): 12.550
+
+slice: seat-d
+  posts:               2
+  agents:              1
+  duration (min):      3.517
+  posts/min:           0.569
+  damping rules:       1
+  Re_bus:              0.569
+  signal:              1
+  noise:               0
+  unclassified:        1
+  SNR:                 -
+  SNR':                1.000
+  deliverables:        1
+  done claims:         0
+  posts/deliverable:   2.000
+  time to quiescence (min): 3.517
+
+
+JSON
+{"rules":{"noise":"standing by|session complete|^ack$|ping|still here|waiting on","signal":"[^[:space:]]+\\.(md|hs|cabal|jsonl)|🟢|⟝|🚩|decided|fixed|bug|found","deliverable":"🟢"},"slices":[{"slice":"channel-a","posts":2,"agents":1,"duration_minutes":1.1833333333333333481363069950020872056484222412109375,"posts_per_minute":1.690140845070422503937379588023759424686431884765625,"damping_rules":1,"re_bus":1.690140845070422503937379588023759424686431884765625,"signal":1,"noise":1,"unclassified":0,"snr":1,"snr_prime":1,"deliverables":0,"done_claims":1,"posts_per_deliverable":null,"time_to_quiescence_minutes":1.1833333333333333481363069950020872056484222412109375},{"slice":"channel-b","posts":1,"agents":1,"duration_minutes":0,"posts_per_minute":0,"damping_rules":1,"re_bus":0,"signal":0,"noise":0,"unclassified":1,"snr":0,"snr_prime":0,"deliverables":0,"done_claims":0,"posts_per_deliverable":null,"time_to_quiescence_minutes":0},{"slice":"seat-a","posts":2,"agents":1,"duration_minutes":6.11666666666666625218340413994155824184417724609375,"posts_per_minute":0.326975476839237055859399561086320318281650543212890625,"damping_rules":1,"re_bus":0.326975476839237055859399561086320318281650543212890625,"signal":1,"noise":0,"unclassified":1,"snr":null,"snr_prime":1,"deliverables":0,"done_claims":0,"posts_per_deliverable":null,"time_to_quiescence_minutes":6.11666666666666625218340413994155824184417724609375},{"slice":"seat-b","posts":4,"agents":1,"duration_minutes":34.966666666666668561447295360267162322998046875,"posts_per_minute":0.11439466158245947813298926121206022799015045166015625,"damping_rules":1,"re_bus":0.11439466158245947813298926121206022799015045166015625,"signal":1,"noise":3,"unclassified":0,"snr":0.333333333333333314829616256247390992939472198486328125,"snr_prime":0.333333333333333314829616256247390992939472198486328125,"deliverables":1,"done_claims":0,"posts_per_deliverable":4,"time_to_quiescence_minutes":32},{"slice":"seat-c","posts":3,"agents":1,"duration_minutes":12.550000000000000710542735760100185871124267578125,"posts_per_minute":0.2390438247011952010989688233166816644370555877685546875,"damping_rules":1,"re_bus":0.2390438247011952010989688233166816644370555877685546875,"signal":2,"noise":0,"unclassified":1,"snr":null,"snr_prime":2,"deliverables":0,"done_claims":1,"posts_per_deliverable":null,"time_to_quiescence_minutes":12.550000000000000710542735760100185871124267578125},{"slice":"seat-d","posts":2,"agents":1,"duration_minutes":3.51666666666666660745477201999165117740631103515625,"posts_per_minute":0.56872037914691941917766371261677704751491546630859375,"damping_rules":1,"re_bus":0.56872037914691941917766371261677704751491546630859375,"signal":1,"noise":0,"unclassified":1,"snr":null,"snr_prime":1,"deliverables":1,"done_claims":0,"posts_per_deliverable":2,"time_to_quiescence_minutes":3.51666666666666660745477201999165117740631103515625}]}
+
+MODE thread
+SLICE 0|1,0
+SLICE 2|8,7,6,5,4,3,2
+SLICE 282|282
+SLICE 284|285,284
+SLICE 91|113,101
+TEXT
+bus-stats
+  noise regex:    standing by|session complete|^ack$|ping|still here|waiting on
+  signal regex:   [^[:space:]]+\.(md|hs|cabal|jsonl)|🟢|⟝|🚩|decided|fixed|bug|found
+  deliverable:    🟢
+
+slice: 0
+  posts:               2
+  agents:              2
+  duration (min):      1.700
+  posts/min:           1.176
+  damping rules:       1
+  Re_bus:              2.353
+  signal:              0
+  noise:               1
+  unclassified:        1
+  SNR:                 0.000
+  SNR':                0.000
+  deliverables:        0
+  done claims:         0
+  posts/deliverable:   n/a
+  time to quiescence (min): 0.000
+
+slice: 2
+  posts:               7
+  agents:              3
+  duration (min):      35.150
+  posts/min:           0.199
+  damping rules:       1
+  Re_bus:              0.597
+  signal:              4
+  noise:               2
+  unclassified:        1
+  SNR:                 2.000
+  SNR':                1.333
+  deliverables:        1
+  done claims:         1
+  posts/deliverable:   7.000
+  time to quiescence (min): 35.150
+
+slice: 282
+  posts:               1
+  agents:              1
+  duration (min):      0.000
+  posts/min:           0.000
+  damping rules:       1
+  Re_bus:              0.000
+  signal:              0
+  noise:               1
+  unclassified:        0
+  SNR:                 0.000
+  SNR':                0.000
+  deliverables:        0
+  done claims:         0
+  posts/deliverable:   n/a
+  time to quiescence (min): 0.000
+
+slice: 284
+  posts:               2
+  agents:              2
+  duration (min):      0.000
+  posts/min:           0.000
+  damping rules:       1
+  Re_bus:              0.000
+  signal:              1
+  noise:               0
+  unclassified:        1
+  SNR:                 -
+  SNR':                1.000
+  deliverables:        0
+  done claims:         1
+  posts/deliverable:   n/a
+  time to quiescence (min): 0.000
+
+slice: 91
+  posts:               2
+  agents:              1
+  duration (min):      3.517
+  posts/min:           0.569
+  damping rules:       1
+  Re_bus:              0.569
+  signal:              1
+  noise:               0
+  unclassified:        1
+  SNR:                 -
+  SNR':                1.000
+  deliverables:        1
+  done claims:         0
+  posts/deliverable:   2.000
+  time to quiescence (min): 3.517
+
+
+JSON
+{"rules":{"noise":"standing by|session complete|^ack$|ping|still here|waiting on","signal":"[^[:space:]]+\\.(md|hs|cabal|jsonl)|🟢|⟝|🚩|decided|fixed|bug|found","deliverable":"🟢"},"slices":[{"slice":"0","posts":2,"agents":2,"duration_minutes":1.6999999999999999555910790149937383830547332763671875,"posts_per_minute":1.1764705882352941568314008691231720149517059326171875,"damping_rules":1,"re_bus":2.352941176470588313662801738246344029903411865234375,"signal":0,"noise":1,"unclassified":1,"snr":0,"snr_prime":0,"deliverables":0,"done_claims":0,"posts_per_deliverable":null,"time_to_quiescence_minutes":0},{"slice":"2","posts":7,"agents":3,"duration_minutes":35.14999999999999857891452847979962825775146484375,"posts_per_minute":0.199146514935988616645801130289328284561634063720703125,"damping_rules":1,"re_bus":0.597439544807965905448554622125811874866485595703125,"signal":4,"noise":2,"unclassified":1,"snr":2,"snr_prime":1.3333333333333332593184650249895639717578887939453125,"deliverables":1,"done_claims":1,"posts_per_deliverable":7,"time_to_quiescence_minutes":35.14999999999999857891452847979962825775146484375},{"slice":"282","posts":1,"agents":1,"duration_minutes":0,"posts_per_minute":0,"damping_rules":1,"re_bus":0,"signal":0,"noise":1,"unclassified":0,"snr":0,"snr_prime":0,"deliverables":0,"done_claims":0,"posts_per_deliverable":null,"time_to_quiescence_minutes":0},{"slice":"284","posts":2,"agents":2,"duration_minutes":0,"posts_per_minute":0,"damping_rules":1,"re_bus":0,"signal":1,"noise":0,"unclassified":1,"snr":null,"snr_prime":1,"deliverables":0,"done_claims":1,"posts_per_deliverable":null,"time_to_quiescence_minutes":0},{"slice":"91","posts":2,"agents":1,"duration_minutes":3.51666666666666660745477201999165117740631103515625,"posts_per_minute":0.56872037914691941917766371261677704751491546630859375,"damping_rules":1,"re_bus":0.56872037914691941917766371261677704751491546630859375,"signal":1,"noise":0,"unclassified":1,"snr":null,"snr_prime":1,"deliverables":1,"done_claims":0,"posts_per_deliverable":2,"time_to_quiescence_minutes":3.51666666666666660745477201999165117740631103515625}]}

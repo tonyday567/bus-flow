@@ -1,0 +1,11 @@
+packages:
+  bus-flow.cabal
+  ../circuits/circuits.cabal
+  ../circuits-agent/circuits-agent.cabal
+  ../circuits-parser/circuits-parser.cabal
+  ../circuits-mat/circuits-mat.cabal
+  ../circuits-diff/circuits-diff.cabal
+  ../numhask/numhask.cabal
+  ../harpie/harpie.cabal
+  ../circuits-prob/circuits-prob.cabal
+  ../circuits-rel/circuits-rel.cabal

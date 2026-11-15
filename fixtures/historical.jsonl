@@ -1,0 +1,14 @@
+{"id":0,"ts":"2026-11-12T04:03:38","from":"seat-a","channel":null,"to":["seat-b"],"thread":[],"body":"ordinary historical note"}
+{"id":1,"ts":"2026-11-12T04:05:20","from":"seat-b","channel":null,"to":["seat-a"],"thread":[0],"body":"standing by"}
+{"id":2,"ts":"2026-11-12T04:09:45","from":"seat-a","channel":null,"to":["seat-b"],"thread":[],"body":"decided to keep the flow boundary"}
+{"id":3,"ts":"2026-11-12T04:14:30","from":"seat-b","channel":null,"to":["seat-a"],"thread":[2],"body":"ack"}
+{"id":4,"ts":"2026-11-12T04:32:21","from":"seat-c","channel":null,"to":["seat-b"],"thread":[3],"body":"DONE: src/Bus/Flow.hs"}
+{"id":5,"ts":"2026-11-12T04:35:07","from":"seat-c","channel":null,"to":["seat-b"],"thread":[4],"body":"ordinary reply"}
+{"id":6,"ts":"2026-11-12T04:37:20","from":"seat-b","channel":null,"to":["seat-c"],"thread":[4],"body":"🟢 extraction complete"}
+{"id":7,"ts":"2026-11-12T04:40:18","from":"seat-b","channel":null,"to":["seat-c"],"thread":[5],"body":"waiting on the next task"}
+{"id":8,"ts":"2026-11-12T04:44:54","from":"seat-c","channel":null,"to":["seat-b"],"thread":[7],"body":"fixed the historical decoder"}
+{"id":101,"ts":"2026-11-12T06:53:39","from":"seat-d","channel":null,"to":["seat-b","seat-e"],"thread":[91],"body":"ordinary multi-recipient note"}
+{"id":113,"ts":"2026-11-12T06:57:10","from":"seat-d","channel":null,"to":["seat-c","seat-b","seat-e"],"thread":[91],"body":"🟢 multi-recipient delivery"}
+{"id":282,"ts":"2026-11-14T01:35:21","from":"channel-a","channel":"flow-channel","to":[],"thread":[],"body":"ping"}
+{"id":284,"ts":"2026-11-14T01:36:32","from":"channel-b","channel":"flow-channel","to":[],"thread":[],"body":"channel ordinary note"}
+{"id":285,"ts":"2026-11-14T01:36:32","from":"channel-a","channel":"flow-channel","to":[],"thread":[284],"body":"DONE: fixtures/historical.jsonl"}

@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 
 module Main (main) where
 
 import Bus.Flow
-import Circuit.Agent (Post (..))
-import Circuit.Agent.Framing (PostId, Stamped, frameStored, parseTimeText, stamp, stamped, unframeStored, pattern Stamped)
+import Circuit.Parser.Framing (Stored, decodeRow, encodeRow)
 import Circuit.Parser.Json (Json (..), decodeJson)
+import Circuit.Post (Post (..), PostId)
+import Circuit.Shared (Stamped (..))
 import Control.Monad (forM, forM_)
 import Data.List (sort, sortOn)
 import Data.Maybe (fromMaybe, mapMaybe)
@@ -14,7 +14,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.IO qualified as T
-import Data.Time (addUTCTime, getCurrentTime)
+import Data.Time (UTCTime, addUTCTime, defaultTimeLocale, getCurrentTime, parseTimeM)
 import Data.Vector qualified as V
 import Paths_bus_flow (getDataFileName)
 import Prelude
@@ -28,10 +28,10 @@ main = do
 assert :: String -> Bool -> IO ()
 assert label ok = if ok then pure () else error label
 
-mk :: Text -> Text -> PostId -> Post Text
+mk :: Text -> Text -> PostId -> Post Text Text
 mk b f _ = Post f Nothing [] [] b
 
-mkPosts :: IO [Stamped Text]
+mkPosts :: IO [Stored]
 mkPosts = do
   now <- getCurrentTime
   let at ts i b f = Stamped (addUTCTime ts now, i) (mk b f i)
@@ -45,8 +45,12 @@ mkPosts = do
       at 360 6 "🟢 shipped" "bob"
     ]
 
-frameId :: Stamped a -> PostId
+frameId :: Stamped (UTCTime, PostId) a -> PostId
 frameId = snd . stamp
+
+-- | Second-precision UTC, the shape the framing module reads and writes.
+parseTimeText :: Text -> Maybe UTCTime
+parseTimeText = parseTimeM True defaultTimeLocale "%Y-%m-%dT%H:%M:%S" . T.unpack
 
 -- The twenty pure assertions moved from free-agent 5990652 Axioma.Bus.
 baselineFlowWitnesses :: IO ()
@@ -181,7 +185,7 @@ flowTopic = do
     assert "SLICE-PARTITION: slicing conserves every post exactly once" (slicedIds == sourceIds)
 
   historical <- readHistorical
-  assert "HISTORICAL-DECODE: all fields survive canonical decode" (map frameStored historical == T.lines historicalFixture)
+  assert "HISTORICAL-DECODE: all fields survive canonical decode" (map encodeRow historical == T.lines historicalFixture)
   assert "HISTORICAL-IDENTITY: real ids are preserved" (map frameId historical == [0, 1, 2, 3, 4, 5, 6, 7, 8, 101, 113, 282, 284, 285])
   assert "HISTORICAL-CHANNEL: channels survive" (mapMaybe (channel . stamped) historical == ["flow-channel", "flow-channel", "flow-channel"])
   assert "HISTORICAL-RECIPIENTS: multiple recipients survive" (map (length . to . stamped) historical == [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 0, 0, 0])
@@ -321,9 +325,9 @@ emptyTextGolden =
     ]
 
 historicalFixture :: Text
-historicalFixture = T.unlines (map frameStored expectedHistorical)
+historicalFixture = T.unlines (map encodeRow expectedHistorical)
 
-expectedHistorical :: [Stamped Text]
+expectedHistorical :: [Stored]
 expectedHistorical =
   [ Stamped (time "2026-11-12T04:03:38", 0) (Post "seat-a" Nothing ["seat-b"] [] "ordinary historical note"),
     Stamped (time "2026-11-12T04:05:20", 1) (Post "seat-b" Nothing ["seat-a"] [0] "standing by"),
@@ -343,17 +347,17 @@ expectedHistorical =
   where
     time t = fromMaybe (error ("bad historical fixture time: " <> T.unpack t)) (parseTimeText t)
 
-readHistorical :: IO [Stamped Text]
+readHistorical :: IO [Stored]
 readHistorical = do
   raw <- T.readFile =<< getDataFileName "fixtures/historical.jsonl"
   rows <- forM (zip [1 :: Int ..] (T.lines raw)) $ \(lineNo, line) ->
-    case unframeStored line of
-      Nothing -> fail ("historical fixture decode failed at line " <> show lineNo)
-      Just post -> pure post
+    case decodeRow line of
+      Left why -> fail ("historical fixture decode failed at row " <> show lineNo <> ": " <> T.unpack why)
+      Right post -> pure post
   assert "HISTORICAL-FIXTURE-COUNT: fourteen rows" (length rows == 14)
   pure rows
 
-baselineReport :: [Stamped Text] -> Text
+baselineReport :: [Stored] -> Text
 baselineReport posts = T.unlines (map modeReport modes)
   where
     modes = [(WholeLog, "whole"), (WindowMinutes 60, "window-60"), (ByAgent, "agent"), (ByThread, "thread")]

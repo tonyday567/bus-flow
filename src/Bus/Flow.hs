@@ -28,9 +28,10 @@ module Bus.Flow
   )
 where
 
-import Circuit.Agent (Post (..))
-import Circuit.Agent.Framing (Stamped, stamp, stamped)
+import Circuit.Parser.Framing (Stored)
 import Circuit.Parser.Json (Json (..), encodeJson)
+import Circuit.Post (Post (..))
+import Circuit.Shared (Stamped (..))
 import Data.Bifunctor (first)
 import Data.List (minimumBy, sort, sortOn)
 import Data.Map qualified as Map
@@ -81,18 +82,18 @@ data Classification = Signal | Noise | Neutral
 
 -- | Classify a post.  Signal takes precedence over noise: a post matching the
 -- noise regex but carrying a path or mark is counted as signal.
-classify :: Rules -> Post Text -> Classification
+classify :: Rules -> Post Text Text -> Classification
 classify rules p
   | matches (signalRE rules) (body p) = Signal
   | matches (noiseRE rules) (body p) = Noise
   | otherwise = Neutral
 
 -- | Whether a post is a conductor deliverable.
-isDeliverable :: Rules -> Post Text -> Bool
+isDeliverable :: Rules -> Post Text Text -> Bool
 isDeliverable rules p = matches (deliverableRE rules) (body p)
 
 -- | Whether a post claims completion and cites a path.
-isDoneClaim :: Post Text -> Bool
+isDoneClaim :: Post Text Text -> Bool
 isDoneClaim p =
   T.isInfixOf "DONE" (T.toUpper (body p)) && matches pathRE (body p)
 
@@ -134,7 +135,7 @@ data SliceMode
 -- | Partition stamped posts into slices.  Posts without a parseable timestamp
 -- are dropped from time-based slicing, but kept for thread slicing (where the
 -- id is enough).
-slicePosts :: SliceMode -> [Stamped Text] -> [(Text, [Stamped Text])]
+slicePosts :: SliceMode -> [Stored] -> [(Text, [Stored])]
 slicePosts WholeLog posts = [("whole", posts)]
 slicePosts (WindowMinutes m) posts =
   case timed of
@@ -199,7 +200,7 @@ data Stats = Stats
   deriving (Eq, Show)
 
 -- | Compute stats for one slice given classification rules and a damping count.
-computeStats :: Rules -> Int -> Text -> [Stamped Text] -> Stats
+computeStats :: Rules -> Int -> Text -> [Stored] -> Stats
 computeStats rules damping label posts =
   Stats
     { statSlice = label,

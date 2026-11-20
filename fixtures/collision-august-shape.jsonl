@@ -1,0 +1,16 @@
+{"id":0,"ts":"2026-11-19T00:00:00","from":"alpha","to":[],"thread":[],"body":"NOTE root zero"}
+{"id":1,"ts":"2026-11-19T00:00:01","from":"alpha","to":[],"thread":[],"body":"NOTE root one"}
+{"id":2,"ts":"2026-11-19T00:00:02","from":"bravo","to":["alpha"],"thread":[1],"body":"REPLY to 1"}
+{"id":229,"ts":"2026-11-19T00:00:03","from":"gapper","to":["pitboss"],"thread":[],"body":"NOTE pre-collision id 229"}
+{"id":230,"ts":"2026-11-19T00:00:04","from":"trimmer","to":["pitboss"],"thread":[],"body":"NOTE collision 230 A"}
+{"id":230,"ts":"2026-11-19T00:00:05","from":"clarifier","to":["pitboss"],"thread":[],"body":"NOTE collision 230 B"}
+{"id":230,"ts":"2026-11-19T00:00:06","from":"gapper","to":["pitboss"],"thread":[],"body":"NOTE collision 230 C"}
+{"id":240,"ts":"2026-11-19T00:00:07","from":"pitboss","to":["trimmer"],"thread":[230],"body":"TASK cites ambiguous 230"}
+{"id":246,"ts":"2026-11-19T00:00:08","from":"architect","to":["pitboss"],"thread":[242],"body":"NOTE cites absent 242"}
+{"id":247,"ts":"2026-11-19T00:00:09","from":"architect","to":["pitboss"],"thread":[],"body":"NOTE collision 247 A"}
+{"id":247,"ts":"2026-11-19T00:00:10","from":"librarian","to":["pitboss"],"thread":[],"body":"NOTE collision 247 B"}
+{"id":255,"ts":"2026-11-19T00:00:11","from":"pitboss","to":["architect"],"thread":[247],"body":"TASK cites ambiguous 247"}
+{"id":256,"ts":"2026-11-19T00:00:12","from":"pitboss","to":["librarian"],"thread":[247],"body":"DONE cites ambiguous 247"}
+{"id":300,"ts":"2026-11-19T00:00:13","from":"alpha","to":["alpha"],"thread":[2,1],"body":"NOTE cites reversed 2,1"}
+{"id":301,"ts":"2026-11-19T00:00:14","from":"alpha","to":["alpha"],"thread":[1,999],"body":"NOTE cites mixed 1,999"}
+{"id":302,"ts":"2026-11-19T00:00:15","from":"alpha","to":["alpha"],"thread":[999],"body":"NOTE cites phantom 999 only"}

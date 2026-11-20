@@ -17,6 +17,17 @@ module Bus.Flow
     -- * Slicing
     SliceMode (..),
     slicePosts,
+    ThreadIndex,
+    indexThreads,
+    threadComponents,
+    lookupPost,
+    lookupComponent,
+    PostLookup (..),
+    ComponentLookup (..),
+    ComponentKey (..),
+    ThreadComponent (..),
+    ThreadPost (..),
+    Citation (..),
 
     -- * Statistics
     Stats (..),
@@ -30,12 +41,11 @@ where
 
 import Circuit.Parser.Framing (Stored)
 import Circuit.Parser.Json (Json (..), encodeJson)
-import Circuit.Post (Post (..))
+import Circuit.Post (Post (..), PostId)
 import Circuit.Shared (Stamped (..))
 import Data.Bifunctor (first)
 import Data.List (minimumBy, sort, sortOn)
 import Data.Map qualified as Map
-import Data.Maybe (mapMaybe)
 import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -132,9 +142,129 @@ data SliceMode
     ByAgent
   deriving (Eq, Show)
 
--- | Partition stamped posts into slices.  Posts without a parseable timestamp
+-- | Result of looking up one post id. A collision retains every row in log
+-- order; it never selects a last-wins candidate.
+data PostLookup
+  = PostAbsent
+  | PostFound Stored
+  | PostCollision [Stored]
+  deriving (Eq, Show)
+
+-- | One citation in its original position in the post's @thread@ list.
+-- 'PostAbsent' is a phantom citation and 'PostCollision' is an ambiguous one.
+data Citation = Citation
+  { citationId :: PostId,
+    citationLookup :: PostLookup
+  }
+  deriving (Eq, Show)
+
+-- | A stamped row plus the complete resolution of its citations.
+data ThreadPost = ThreadPost
+  { threadPost :: Stored,
+    threadCitations :: [Citation]
+  }
+  deriving (Eq, Show)
+
+-- | A resolved root, or the cited id grouping rows whose ancestry has no
+-- uniquely resolved parent. An unresolved key is evidence, not a parent guess.
+data ComponentKey
+  = ResolvedRoot PostId
+  | UnresolvedParent PostId
+  deriving (Eq, Ord, Show)
+
+-- | One retained thread component. 'componentCollisions' names globally
+-- duplicate ids represented in the component, including when all colliding
+-- rows share one component.
+data ThreadComponent = ThreadComponent
+  { componentKey :: ComponentKey,
+    componentPosts :: [ThreadPost],
+    componentCollisions :: [PostId]
+  }
+  deriving (Eq, Show)
+
+-- | Result of finding components containing an actual post id. Duplicate rows
+-- in one component yield 'ComponentFound' plus a 'componentCollisions' mark;
+-- rows in different components yield 'ComponentCollision'.
+data ComponentLookup
+  = ComponentAbsent
+  | ComponentFound ThreadComponent
+  | ComponentCollision [ThreadComponent]
+  deriving (Eq, Show)
+
+-- | A pure index of post ids, thread components, and citation evidence. The
+-- constructor is hidden so lookups cannot bypass collision handling.
+data ThreadIndex = ThreadIndex
+  { postRows :: Map.Map PostId [Stored],
+    threadComponents :: [ThreadComponent]
+  }
+  deriving (Eq, Show)
+
+-- | Index every row exactly once. Parent traversal follows only uniquely
+-- resolved citations, choosing the least parent id when several resolve (the
+-- established slicer rule). If none resolves, the least cited id groups the
+-- unresolved component and all citation evidence remains on its rows.
+indexThreads :: [Stored] -> ThreadIndex
+indexThreads posts =
+  ThreadIndex
+    { postRows = rows,
+      threadComponents = map makeComponent (Map.toList groups)
+    }
+  where
+    frameId p = snd (stamp p)
+    rows = Map.fromListWith (flip (++)) [(frameId p, [p]) | p <- posts]
+    lookupRows pid = case Map.lookup pid rows of
+      Nothing -> PostAbsent
+      Just [p] -> PostFound p
+      Just ps -> PostCollision ps
+    citationsFor p = [Citation cited (lookupRows cited) | cited <- thread (stamped p)]
+    rootOf = go []
+      where
+        go seen p
+          | p `elem` seen =
+              ResolvedRoot (minimum (frameId p : map frameId (takeWhile (/= p) seen)))
+          | otherwise = case citationsFor p of
+              [] -> ResolvedRoot (frameId p)
+              citations -> case [parent | Citation _ (PostFound parent) <- citations] of
+                [] -> UnresolvedParent (minimum (map citationId citations))
+                parents -> go (p : seen) (minimumBy (comparing frameId) parents)
+    decorated = [ThreadPost p (citationsFor p) | p <- posts]
+    groups = Map.fromListWith (++) [(rootOf p, [decoratedPost]) | (p, decoratedPost) <- zip posts decorated]
+    makeComponent (key, componentRows) =
+      ThreadComponent
+        { componentKey = key,
+          componentPosts = componentRows,
+          componentCollisions =
+            [ pid
+            | (pid, collidingRows) <- Map.toList rows,
+              length collidingRows > 1,
+              any ((== pid) . frameId . threadPost) componentRows
+            ]
+        }
+
+-- | Collision-safe lookup of every stamped row carrying an id.
+lookupPost :: ThreadIndex -> PostId -> PostLookup
+lookupPost index pid = case Map.lookup pid (postRows index) of
+  Nothing -> PostAbsent
+  Just [p] -> PostFound p
+  Just ps -> PostCollision ps
+
+-- | Find every component containing an actual row with the requested id.
+-- Unresolved grouping keys alone do not manufacture a matching post.
+lookupComponent :: ThreadIndex -> PostId -> ComponentLookup
+lookupComponent index pid = case filter contains (threadComponents index) of
+  [] -> ComponentAbsent
+  [component] -> ComponentFound component
+  components -> ComponentCollision components
+  where
+    contains = any ((== pid) . snd . stamp . threadPost) . componentPosts
+
+-- | Partition stamped posts into slices. Posts without a parseable timestamp
 -- are dropped from time-based slicing, but kept for thread slicing (where the
 -- id is enough).
+--
+-- 'ByThread' is a compatibility projection of 'indexThreads'. Its text labels
+-- are not unique when a collision and an unresolved branch share an id; a
+-- renderer that needs that distinction must consume 'ThreadComponent' instead.
 slicePosts :: SliceMode -> [Stored] -> [(Text, [Stored])]
 slicePosts WholeLog posts = [("whole", posts)]
 slicePosts (WindowMinutes m) posts =
@@ -151,21 +281,10 @@ slicePosts (WindowMinutes m) posts =
           end = addMinutes start m
        in T.concat [formatTs start, "..", formatTs end]
 slicePosts ByThread posts =
-  sortOn fst [(showt k, v) | (k, v) <- Map.toList roots]
+  sortOn fst [(componentLabel (componentKey component), map threadPost (componentPosts component)) | component <- threadComponents (indexThreads posts)]
   where
-    idx = Map.fromList [(snd (stamp p), p) | p <- posts]
-    rootOf = go []
-      where
-        go seen p
-          | pid `elem` seen = minimum (pid : takeWhile (/= pid) seen)
-          | otherwise = case thread (stamped p) of
-              [] -> pid
-              ts -> case mapMaybe (`Map.lookup` idx) ts of
-                [] -> minimum ts
-                ps -> go (pid : seen) (minimumBy (comparing (snd . stamp)) ps)
-          where
-            pid = snd (stamp p)
-    roots = Map.fromListWith (++) [(rootOf p, [p]) | p <- posts]
+    componentLabel (ResolvedRoot pid) = showt pid
+    componentLabel (UnresolvedParent cited) = showt cited
 slicePosts ByAgent posts =
   sortOn fst [(k, v) | (k, v) <- Map.toList byAuthor]
   where

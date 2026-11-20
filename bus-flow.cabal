@@ -20,6 +20,8 @@ extra-doc-files:
 
 data-files:
   fixtures/baseline.txt
+  fixtures/collision-august-shape.jsonl
+  fixtures/collision-cross-component.jsonl
   fixtures/historical.jsonl
 
 source-repository head

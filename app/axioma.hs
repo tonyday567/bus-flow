@@ -22,6 +22,7 @@ import Prelude
 main :: IO ()
 main = do
   baselineFlowWitnesses
+  threadAncestryWitnesses
   flowTopic
   putStrLn "bus-flow-axioma: all witnesses passed"
 
@@ -130,6 +131,94 @@ baselineFlowWitnesses = do
   assert "baseline: ordinary ancestry still resolves to its root" (componentIds "7" == [8, 7])
   assert "baseline: a self-ancestor is its own root" (componentIds "9" == [9])
   assert "baseline: thread slicing accounts for every cyclic and ordinary post" (length threadSlices == 3)
+
+-- Constructed E5 fixtures: duplicate rows remain exact values, not merely ids.
+threadAncestryWitnesses :: IO ()
+threadAncestryWitnesses = do
+  august <- readAncestryFixture "fixtures/collision-august-shape.jsonl" 16
+  let index = indexThreads august
+      fixtureRow pid label rows = case [p | p <- rows, frameId p == pid, body (stamped p) == label] of
+        [p] -> p
+        _ -> error ("fixture row not unique: " <> show (pid, label))
+      row1 = fixtureRow 1 "NOTE root one" august
+      row2 = fixtureRow 2 "REPLY to 1" august
+      collisions230 =
+        [ fixtureRow 230 "NOTE collision 230 A" august,
+          fixtureRow 230 "NOTE collision 230 B" august,
+          fixtureRow 230 "NOTE collision 230 C" august
+        ]
+      row240 = fixtureRow 240 "TASK cites ambiguous 230" august
+      row246 = fixtureRow 246 "NOTE cites absent 242" august
+      collisions247 =
+        [ fixtureRow 247 "NOTE collision 247 A" august,
+          fixtureRow 247 "NOTE collision 247 B" august
+        ]
+      row255 = fixtureRow 255 "TASK cites ambiguous 247" august
+      row256 = fixtureRow 256 "DONE cites ambiguous 247" august
+      row300 = fixtureRow 300 "NOTE cites reversed 2,1" august
+      row301 = fixtureRow 301 "NOTE cites mixed 1,999" august
+      row302 = fixtureRow 302 "NOTE cites phantom 999 only" august
+      threadPostFor p ix = case [tp | c <- threadComponents ix, tp <- componentPosts c, threadPost tp == p] of
+        [tp] -> tp
+        _ -> error ("indexed post not unique: " <> show p)
+      componentForPost p ix = case [c | c <- threadComponents ix, any ((== p) . threadPost) (componentPosts c)] of
+        [c] -> c
+        _ -> error ("indexed component not unique: " <> show p)
+      componentAt key ix = case filter ((== key) . componentKey) (threadComponents ix) of
+        [c] -> c
+        _ -> error ("component key not unique: " <> show key)
+      storedComponent = map threadPost . componentPosts
+      retainedRows ix = sortOn encodeRow [threadPost tp | c <- threadComponents ix, tp <- componentPosts c]
+      sourceRows = sortOn encodeRow
+      slicedRows rows = sortOn encodeRow (concatMap snd (slicePosts ByThread rows))
+      root230 = componentAt (ResolvedRoot 230) index
+      unresolved240 = componentForPost row240 index
+      unresolved247 = componentAt (UnresolvedParent 247) index
+
+  assert "ANCESTRY-RETENTION: every August-shape row survives exactly once" (retainedRows index == sourceRows august)
+  assert "ANCESTRY-SLICE-RETENTION: compatibility slicing drops no duplicate row" (slicedRows august == sourceRows august)
+  assert "ANCESTRY-RESOLVABLE: a unique citation retains its exact parent" (threadCitations (threadPostFor row2 index) == [Citation 1 (PostFound row1)])
+  assert "ANCESTRY-RESOLVABLE-COMPONENT: a unique child follows its parent" (componentKey (componentForPost row2 index) == ResolvedRoot 1)
+  assert "ANCESTRY-COLLISION-LOOKUP: id 230 returns all three rows in log order" (lookupPost index 230 == PostCollision collisions230)
+  assert "ANCESTRY-COLLISION-ROWS: one component retains all three exact id-230 rows" (sortOn encodeRow (storedComponent root230) == sortOn encodeRow collisions230)
+  assert "ANCESTRY-COLLISION-MARK: a shared component still marks key 230 ambiguous" (componentCollisions root230 == [230])
+  assert "ANCESTRY-COLLISION-COMPONENT: same-component duplicates remain findable without guessing" (lookupComponent index 230 == ComponentFound root230)
+  assert "ANCESTRY-AMBIGUOUS-CITATION: row 240 retains all id-230 candidates" (threadCitations (threadPostFor row240 index) == [Citation 230 (PostCollision collisions230)])
+  assert "ANCESTRY-AMBIGUOUS-COMPONENT: row 240 is grouped by cited id, not attached" (componentKey unresolved240 == UnresolvedParent 230 && storedComponent unresolved240 == [row240])
+  assert "ANCESTRY-NO-LAST-WINS: row 240 is absent from the candidate component" (row240 `notElem` storedComponent root230)
+  assert "ANCESTRY-AMBIGUOUS-LOOKUP: requesting child 240 finds its unresolved component" (lookupComponent index 240 == ComponentFound unresolved240)
+  assert "ANCESTRY-AMBIGUOUS-GROUP: both id-247 children remain grouped by cited id" (sortOn encodeRow (storedComponent unresolved247) == sortOn encodeRow [row255, row256])
+  assert "ANCESTRY-AMBIGUOUS-247: both children retain both candidates" (map (threadCitations . (`threadPostFor` index)) [row255, row256] == replicate 2 [Citation 247 (PostCollision collisions247)])
+  assert "ANCESTRY-ALL-ABSENT: phantom-only row 302 retains cited id 999" (threadCitations (threadPostFor row302 index) == [Citation 999 PostAbsent])
+  assert "ANCESTRY-ALL-ABSENT-COMPONENT: row 302 is unresolved, not promoted to a root" (componentKey (componentForPost row302 index) == UnresolvedParent 999 && storedComponent (componentForPost row302 index) == [row302])
+  assert "ANCESTRY-PHANTOM-NOT-POST: an unresolved key does not manufacture post 999" (lookupPost index 999 == PostAbsent && lookupComponent index 999 == ComponentAbsent)
+  assert "ANCESTRY-ALL-ABSENT-246: the second phantom-only branch is retained" (componentKey (componentForPost row246 index) == UnresolvedParent 242 && threadCitations (threadPostFor row246 index) == [Citation 242 PostAbsent])
+  assert "ANCESTRY-MIXED: row 301 retains resolved 1 and phantom 999 in citation order" (threadCitations (threadPostFor row301 index) == [Citation 1 (PostFound row1), Citation 999 PostAbsent])
+  assert "ANCESTRY-MIXED-COMPONENT: a unique parent may resolve without erasing phantom evidence" (componentKey (componentForPost row301 index) == ResolvedRoot 1)
+  assert "ANCESTRY-REVERSED-LABELLED: constructed [2,1] citations retain their order" (threadCitations (threadPostFor row300 index) == [Citation 2 (PostFound row2), Citation 1 (PostFound row1)])
+  assert "ANCESTRY-REVERSED-RULE: multiple resolved parents still choose the least id" (componentKey (componentForPost row300 index) == ResolvedRoot 1)
+
+  cross <- readAncestryFixture "fixtures/collision-cross-component.jsonl" 5
+  let crossIndex = indexThreads cross
+      cross2 = fixtureRow 2 "NOTE root two" cross
+      cross3Root = fixtureRow 3 "NOTE id 3 root" cross
+      cross3Reply = fixtureRow 3 "REPLY id 3 to 2" cross
+      cross4 = fixtureRow 4 "REPLY to ambiguous 3" cross
+      crossRoot2 = componentAt (ResolvedRoot 2) crossIndex
+      crossRoot3 = componentAt (ResolvedRoot 3) crossIndex
+      crossUnresolved4 = componentForPost cross4 crossIndex
+  assert "ANCESTRY-X-RETENTION: both id-3 rows and all other rows survive exactly once" (retainedRows crossIndex == sourceRows cross)
+  assert "ANCESTRY-X-SLICE-RETENTION: compatibility slicing retains both components" (slicedRows cross == sourceRows cross)
+  assert "ANCESTRY-X-COLLISION-LOOKUP: id 3 returns root and reply rather than last-wins" (lookupPost crossIndex 3 == PostCollision [cross3Root, cross3Reply])
+  assert "ANCESTRY-X-DUPLICATE-COMPONENTS: root and reply remain in separate exact components" (storedComponent crossRoot3 == [cross3Root] && sortOn encodeRow (storedComponent crossRoot2) == sortOn encodeRow [cross2, cross3Reply])
+  assert "ANCESTRY-X-COMPONENT-MARKS: both id-3 components mark the ambiguous key" (componentCollisions crossRoot2 == [3] && componentCollisions crossRoot3 == [3])
+  assert "ANCESTRY-X-COMPONENT-COLLISION: component lookup returns both candidates" $ case lookupComponent crossIndex 3 of
+    ComponentCollision components -> sort (map componentKey components) == [ResolvedRoot 2, ResolvedRoot 3]
+    _ -> False
+  assert "ANCESTRY-X-AMBIGUOUS-CITATION: child 4 retains both id-3 candidates" (threadCitations (threadPostFor cross4 crossIndex) == [Citation 3 (PostCollision [cross3Root, cross3Reply])])
+  assert "ANCESTRY-X-NO-LAST-WINS: child 4 attaches to neither id-3 candidate" (cross4 `notElem` storedComponent crossRoot2 && cross4 `notElem` storedComponent crossRoot3)
+  assert "ANCESTRY-X-UNRESOLVED: child 4 has its own cited-id component" (componentKey crossUnresolved4 == UnresolvedParent 3 && storedComponent crossUnresolved4 == [cross4])
+  assert "ANCESTRY-X-CHILD-LOOKUP: child 4 remains directly findable" (lookupComponent crossIndex 4 == ComponentFound crossUnresolved4)
 
 flowTopic :: IO ()
 flowTopic = do
@@ -346,6 +435,16 @@ expectedHistorical =
   ]
   where
     time t = fromMaybe (error ("bad historical fixture time: " <> T.unpack t)) (parseTimeText t)
+
+readAncestryFixture :: FilePath -> Int -> IO [Stored]
+readAncestryFixture name expectedCount = do
+  raw <- T.readFile =<< getDataFileName name
+  rows <- forM (zip [1 :: Int ..] (T.lines raw)) $ \(lineNo, line) ->
+    case decodeRow line of
+      Left why -> fail (name <> " decode failed at row " <> show lineNo <> ": " <> T.unpack why)
+      Right post -> pure post
+  assert (name <> ": constructed row count") (length rows == expectedCount)
+  pure rows
 
 readHistorical :: IO [Stored]
 readHistorical = do

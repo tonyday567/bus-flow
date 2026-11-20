@@ -1,0 +1,5 @@
+{"id":1,"ts":"2026-11-19T01:00:00","from":"alpha","to":[],"thread":[],"body":"NOTE root one"}
+{"id":2,"ts":"2026-11-19T01:00:01","from":"bravo","to":[],"thread":[],"body":"NOTE root two"}
+{"id":3,"ts":"2026-11-19T01:00:02","from":"charlie","to":[],"thread":[],"body":"NOTE id 3 root"}
+{"id":3,"ts":"2026-11-19T01:00:03","from":"delta","to":["bravo"],"thread":[2],"body":"REPLY id 3 to 2"}
+{"id":4,"ts":"2026-11-19T01:00:04","from":"echo","to":["alpha"],"thread":[3],"body":"REPLY to ambiguous 3"}

@@ -211,6 +211,8 @@ threadAncestryWitnesses = do
   assert "ANCESTRY-X-SLICE-RETENTION: compatibility slicing retains both components" (slicedRows cross == sourceRows cross)
   assert "ANCESTRY-X-COLLISION-LOOKUP: id 3 returns root and reply rather than last-wins" (lookupPost crossIndex 3 == PostCollision [cross3Root, cross3Reply])
   assert "ANCESTRY-X-DUPLICATE-COMPONENTS: root and reply remain in separate exact components" (storedComponent crossRoot3 == [cross3Root] && sortOn encodeRow (storedComponent crossRoot2) == sortOn encodeRow [cross2, cross3Reply])
+  assert "ANCESTRY-COMPONENT-ORDER: componentPosts preserves reverse-log compatibility order" (storedComponent crossRoot2 == [cross3Reply, cross2])
+  assert "ANCESTRY-RENDERER-SORT: explicit post-id sorting restores renderer order" (sortOn frameId (storedComponent crossRoot2) == [cross2, cross3Reply])
   assert "ANCESTRY-X-COMPONENT-MARKS: both id-3 components mark the ambiguous key" (componentCollisions crossRoot2 == [3] && componentCollisions crossRoot3 == [3])
   assert "ANCESTRY-X-COMPONENT-COLLISION: component lookup returns both candidates" $ case lookupComponent crossIndex 3 of
     ComponentCollision components -> sort (map componentKey components) == [ResolvedRoot 2, ResolvedRoot 3]

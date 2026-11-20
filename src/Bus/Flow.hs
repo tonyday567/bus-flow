@@ -47,6 +47,7 @@ import Data.Bifunctor (first)
 import Data.List (minimumBy, sort, sortOn)
 import Data.Map qualified as Map
 import Data.Ord (comparing)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8)
@@ -175,6 +176,12 @@ data ComponentKey
 -- | One retained thread component. 'componentCollisions' names globally
 -- duplicate ids represented in the component, including when all colliding
 -- rows share one component.
+--
+-- 'componentPosts' is in reverse log order, preserving the established
+-- 'slicePosts' compatibility order. A renderer must sort explicitly, normally
+-- with @sortOn (snd . stamp . threadPost)@, rather than treating this as
+-- chronological order. A stable id sort retains reverse log order among rows
+-- that share an id.
 data ThreadComponent = ThreadComponent
   { componentKey :: ComponentKey,
     componentPosts :: [ThreadPost],
@@ -185,6 +192,10 @@ data ThreadComponent = ThreadComponent
 -- | Result of finding components containing an actual post id. Duplicate rows
 -- in one component yield 'ComponentFound' plus a 'componentCollisions' mark;
 -- rows in different components yield 'ComponentCollision'.
+--
+-- 'ComponentFound' means one component, not an unambiguous id. Consumers must
+-- also inspect 'componentCollisions' or 'lookupPost' before treating the key as
+-- resolved.
 data ComponentLookup
   = ComponentAbsent
   | ComponentFound ThreadComponent
@@ -212,6 +223,7 @@ indexThreads posts =
   where
     frameId p = snd (stamp p)
     rows = Map.fromListWith (flip (++)) [(frameId p, [p]) | p <- posts]
+    duplicateIds = Map.keysSet (Map.filter ((> 1) . length) rows)
     lookupRows pid = case Map.lookup pid rows of
       Nothing -> PostAbsent
       Just [p] -> PostFound p
@@ -234,11 +246,9 @@ indexThreads posts =
         { componentKey = key,
           componentPosts = componentRows,
           componentCollisions =
-            [ pid
-            | (pid, collidingRows) <- Map.toList rows,
-              length collidingRows > 1,
-              any ((== pid) . frameId . threadPost) componentRows
-            ]
+            Set.toList $
+              Set.intersection duplicateIds $
+                Set.fromList (map (frameId . threadPost) componentRows)
         }
 
 -- | Collision-safe lookup of every stamped row carrying an id.
